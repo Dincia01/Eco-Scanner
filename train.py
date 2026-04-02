@@ -1,0 +1,97 @@
+import os
+import torch
+import torch.nn as nn
+import torch.optim as optim
+from torchvision import datasets, transforms
+from torch.utils.data import DataLoader, random_split
+import torchvision.models as models
+import json
+
+#LAS TRANSFORMACIONES SE QUEDAN FUERA 
+transform = transforms.Compose([
+    transforms.Lambda(lambda x: x.convert('RGB')),
+    transforms.Resize((224, 224)),
+    transforms.RandomHorizontalFlip(),
+    transforms.RandomRotation(15),
+    transforms.ToTensor(),
+    transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+])
+
+
+if __name__ == '__main__':
+    # Dispositivo
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    # Dataset o imagenes
+    data_dir = "dataset/train"
+    dataset = datasets.ImageFolder(root=data_dir, transform=transform)
+    clases = dataset.classes
+    num_clases = len(clases)
+
+    print("Clases detectadas:", clases)
+
+    # Split
+    train_size = int(0.8 * len(dataset))
+    val_size = len(dataset) - train_size
+    train_dataset, val_dataset = random_split(dataset, [train_size, val_size])
+
+    train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True, num_workers=0)
+    val_loader = DataLoader(val_dataset, batch_size=32, shuffle=False, num_workers=0)
+
+    # Modelo (ResNet optimizado)
+    model = models.resnet18(weights='IMAGENET1K_V1')
+
+    # Congelar capas
+    for name, child in model.named_children():
+        if name in ['layer4', 'fc']:
+            for param in child.parameters():
+                param.requires_grad = True
+        else:
+            for param in child.parameters():
+                param.requires_grad = False
+
+    model.fc = nn.Linear(model.fc.in_features, num_clases)
+    model = model.to(device)
+
+    print("Iniciando entrenamiento de Eco-Scanner...")
+
+    criterion = nn.CrossEntropyLoss()
+    optimizer = optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=0.0001)
+
+    epochs = 5
+    for epoch in range(epochs):
+        model.train()
+        running_loss = 0
+
+        for images, labels in train_loader:
+            images, labels = images.to(device), labels.to(device)
+
+            optimizer.zero_grad()
+            outputs = model(images)
+            loss = criterion(outputs, labels)
+            loss.backward()
+            optimizer.step()
+
+            running_loss += loss.item()
+
+        # VALIDACIÓN
+        model.eval()
+        correct = 0
+        total = 0
+        with torch.no_grad():
+            for images, labels in val_loader:
+                images, labels = images.to(device), labels.to(device)
+                outputs = model(images)
+                _, predicted = torch.max(outputs, 1)
+                total += labels.size(0)
+                correct += (predicted == labels).sum().item()
+
+        accuracy = 100 * correct / total
+        print(f"Epoch {epoch+1}/{epochs} | Loss: {running_loss/len(train_loader):.4f} | Acc: {accuracy:.2f}%")
+
+    # Guardar
+    with open("clases.json", "w") as f:
+        json.dump(clases, f)
+
+    torch.save(model.state_dict(), "modelo.pth")
+    print("Modelo guardado como modelo.pth con éxito.")
