@@ -7,16 +7,15 @@ from torch.utils.data import DataLoader, random_split
 import torchvision.models as models
 import json
 
-#LAS TRANSFORMACIONES SE QUEDAN FUERA 
+#TRANSFORMACIONES
+
 transform = transforms.Compose([
-    transforms.Lambda(lambda x: x.convert('RGB')),
-    transforms.Resize((224, 224)),
+    transforms.Resize((128, 128)),
     transforms.RandomHorizontalFlip(),
     transforms.RandomRotation(15),
     transforms.ToTensor(),
     transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
 ])
-
 
 if __name__ == '__main__':
     # Dispositivo
@@ -35,9 +34,9 @@ if __name__ == '__main__':
     val_size = len(dataset) - train_size
     train_dataset, val_dataset = random_split(dataset, [train_size, val_size])
 
-    train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True, num_workers=0)
-    val_loader = DataLoader(val_dataset, batch_size=32, shuffle=False, num_workers=0)
-
+   # Cambiamos 32 por 4 para que use menos RAM
+    train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True, num_workers=0, pin_memory=False)
+    val_loader = DataLoader(val_dataset, batch_size=32, shuffle=False, num_workers=0, pin_memory=False)
     # Modelo (ResNet optimizado)
     model = models.resnet18(weights='IMAGENET1K_V1')
 
@@ -58,7 +57,7 @@ if __name__ == '__main__':
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=0.0001)
 
-    epochs = 5
+    epochs = 15
     for epoch in range(epochs):
         model.train()
         running_loss = 0
