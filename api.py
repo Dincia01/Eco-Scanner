@@ -59,21 +59,32 @@ transform = transforms.Compose([
 ])
 
 # Función de predicción
+# Función de predicción
+# Función de predicción (Línea 56 en adelante)
 def predict(img):
     if img is None:
         return "Sube una imagen", None
 
+    # Procesar la imagen
     img_t = transform(img).unsqueeze(0)
 
     with torch.no_grad():
         outputs = model(img_t)
         probs = torch.nn.functional.softmax(outputs[0], dim=0)
 
+    # El modelo hace su predicción inicial
     pred_idx = torch.argmax(probs).item()
+
+    
+    if pred_idx in [clases.index("plastic"), clases.index("glass")]:
+       if probs[clases.index("biological")] > 0.15: 
+         pred_idx = clases.index("biological")
+
+    # Definir clase y confianza finales
     pred_class = clases[pred_idx]
     confianza = probs[pred_idx].item() * 100
 
-  
+    #  Obtener info ambiental
     info = datos_ambientales.get(pred_class, {"nombre": pred_class, "tiempo": "No disponible"})
 
     texto = (f"MATERIAL: {info['nombre'].upper()}\n"
@@ -82,14 +93,10 @@ def predict(img):
              f"\n"
              f"Depositar en su contenedor correspondiente.")
 
-   
     contenedor_path = contenedores.get(pred_class, None)
-    
     contenedor_img = Image.open(contenedor_path) if contenedor_path else None
 
     return texto, contenedor_img
-
-
 
 # Definimos el estilo para que la imagen no sea gigante
 css = ".contenedor-img { max-height: 650px !important; width: auto !important; margin: 0 auto !important; }"
@@ -111,6 +118,10 @@ with gr.Blocks(css=css, title="Eco-Scanner") as demo:
 
     # Conectamos el botón con la función predict
     btn_run.click(fn=predict, inputs=input_img, outputs=[output_text, output_img])
+
+ruta_json = os.path.join(os.path.dirname(__file__), "clases.json")
+with open(ruta_json, "w", encoding="utf-8") as f:
+    json.dump(datos_ambientales, f, indent=4, ensure_ascii=False)
 
 if __name__ == "__main__":
     demo.launch()

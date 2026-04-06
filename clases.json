@@ -1,1 +1,30 @@
-["battery", "biological", "cardboard", "glass", "metal", "paper", "plastic"]
+{
+    "battery": {
+        "nombre": "Batería / Pila",
+        "tiempo": "500 a 1,000 años"
+    },
+    "biological": {
+        "nombre": "Desechos Biológicos",
+        "tiempo": "Semanas a meses"
+    },
+    "cardboard": {
+        "nombre": "Cartón",
+        "tiempo": "1 año"
+    },
+    "glass": {
+        "nombre": "Vidrio",
+        "tiempo": "4,000 años o más"
+    },
+    "metal": {
+        "nombre": "Metal",
+        "tiempo": "10 a 100 años"
+    },
+    "paper": {
+        "nombre": "Papel",
+        "tiempo": "2 a 5 meses"
+    },
+    "plastic": {
+        "nombre": "Plástico",
+        "tiempo": "100 a 1,000 años"
+    }
+}
