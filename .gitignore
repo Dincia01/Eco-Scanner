@@ -1,39 +1,14 @@
-﻿
-# Nombre: Dincia Ciprian Santana
-
+﻿# Nombre: Dincia Ciprian Santana
 # Matrícula: 24-EISN-2-027
-
 # Proyecto: Eco-Scanner
 
-
-
-# 1. BLOQUEAR DATASETS Y ENTRENAMIENTO
-
 dataset/
-
 train/
-
 test/
-
-
-
-# 2. BLOQUEAR MODELOS TEMPORALES
-
 checkpoint.pth
-
-
-
-
-
-# 3. BLOQUEAR BASURA DE PYTHON Y SISTEMA
-
+modelo_entrenado.pth
 __pycache__/
-
 *.pyc
-
 .DS_Store
-
 .env
-
 venv/
-
